@@ -1,0 +1,5 @@
+allure-pytest
+pywinauto
+colorama
+requests
+selenium
