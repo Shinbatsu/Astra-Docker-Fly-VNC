@@ -1,0 +1,35 @@
+# Pyvenv
+.venv/*
+venv/*
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+docker-compose.yml
+Dockerfile
+.docker
+.dockerignore
+
+# Virtual environment
+.env
+.venv/
+venv/
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+
+# Logs stuff:
+*.log
+
+# PyCharm
+.idea
+
+# VS Code
+.vscode/
+
+# Sphinx documentation
+docs/_build/
