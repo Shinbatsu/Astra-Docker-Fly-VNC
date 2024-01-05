@@ -1,0 +1,14 @@
+# Base docker image with fly window manager
+ARG ASTRA_REGISTRY=registry.astralinux.ru/library
+
+# Astra Linux 1.7.7
+ARG ASTRA_IMAGE=astra/ubi17:latest 
+
+FROM ${ASTRA_REGISTRY}/${ASTRA_IMAGE} as astra
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && \
+    apt install --no-install-recommends -y fly-all-main && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/* /usr/share/locales/*
