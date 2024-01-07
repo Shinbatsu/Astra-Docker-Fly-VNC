@@ -1,19 +1,12 @@
 FROM astra-fly:v1.7.6 as astra
 
 EXPOSE 5900
-ARG username=user
-ARG password=12345
+ARG user=user
+ARG password=123321
 
 ENV DEBIAN_FRONTEND="noninteractive" \
     XDG_RUNTIME_DIR=/tmp/runtime-root \
-    DISPLAY=:1.0 \
-    QT_ACCESSIBILITY=1 \
-    QT_LINUX_ACCESSIBILITY_ALWAYS_ON=1 \
-    GTK_MODULES=gail:atk-bridge \
-    NO_AT_BRIDGE=0 \
-    LANG=ru_RU.UTF-8 \
-    LANGUAGE=ru_RU:ru \
-    LC_ALL=ru_RU.UTF-8 
+    DISPLAY=:1.0 
 
 # Установка зависимостей и локалей
 RUN apt-get update && apt-get install -y \
@@ -21,9 +14,20 @@ RUN apt-get update && apt-get install -y \
     && sed -i 's/# ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen \
     && locale-gen ru_RU.UTF-8 \
     && update-locale LANG=ru_RU.UTF-8 \
+    && sudo touch /root/.Xauthority && xauth add ${HOST}$DISPLAY . $(xxd -l 16 -p /dev/urandom) \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* 
 
 # Копирование конфигурационных файлов
 ADD ./xorg.conf /etc/X11/xorg.conf
 
+RUN echo 'root:$password' | chpasswd \
+    && adduser --disabled-password --gecos "" $user \
+    && usermod -aG sudo $user 
+
+
+ADD .scripts/entrypoint.sh /opt/entrypoint.sh
+COPY . /home/user/tests
+
+RUN sudo chmod -R 777 /home/user/tests && sudo chmod +x /opt/entrypoint.sh
+CMD su $user --command /opt/entrypoint.sh
