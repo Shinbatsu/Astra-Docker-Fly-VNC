@@ -1,8 +1,6 @@
-# Base docker image with fly window manager
 ARG ASTRA_REGISTRY=registry.astralinux.ru/library
 
-# Astra Linux 1.7.7
-ARG ASTRA_IMAGE=astra/ubi17:latest 
+ARG ASTRA_IMAGE=astra/ubi18:latest 
 
 FROM ${ASTRA_REGISTRY}/${ASTRA_IMAGE} as astra
 

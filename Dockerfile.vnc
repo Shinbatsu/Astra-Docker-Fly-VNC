@@ -1,33 +1,36 @@
-FROM astra-fly:v1.7.6 as astra
-
-EXPOSE 5900
-ARG user=user
-ARG password=123321
+FROM astra-fly as astra
 
 ENV DEBIAN_FRONTEND="noninteractive" \
-    XDG_RUNTIME_DIR=/tmp/runtime-root \
-    DISPLAY=:1.0 
+    DISPLAY=:99 \
+    VNC_PORT=5901 \
+    NO_VNC_PORT=6901
 
-# Установка зависимостей и локалей
-RUN apt-get update && apt-get install -y \
-    xvfb x11vnc sudo dirmngr locales xserver-xorg-video-dummy git python3-venv \
-    && sed -i 's/# ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen \
-    && locale-gen ru_RU.UTF-8 \
-    && update-locale LANG=ru_RU.UTF-8 \
-    && sudo touch /root/.Xauthority && xauth add ${HOST}$DISPLAY . $(xxd -l 16 -p /dev/urandom) \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* 
+EXPOSE $VNC_PORT $NO_VNC_PORT
 
-# Копирование конфигурационных файлов
-ADD ./xorg.conf /etc/X11/xorg.conf
+ENV HOME=/headless \
+    STARTUPDIR=/dockerstartup \
+    INST_SCRIPTS=/headless/install \
+    NO_VNC_HOME=/headless/noVNC \
+    VNC_COL_DEPTH=24 \
+    VNC_RESOLUTION=1280x1024 \
+    VNC_PW=vncpassword
 
-RUN echo 'root:$password' | chpasswd \
-    && adduser --disabled-password --gecos "" $user \
-    && usermod -aG sudo $user 
+ADD ./scripts/install/ $INST_SCRIPTS/
 
+RUN $INST_SCRIPTS/tools.sh
+RUN $INST_SCRIPTS/no_vnc.sh
+RUN $INST_SCRIPTS/chrome.sh
+RUN $INST_SCRIPTS/libnss_wrapper.sh
 
-ADD .scripts/entrypoint.sh /opt/entrypoint.sh
-COPY . /home/user/tests
+ADD ./scripts/install/ $STARTUPDIR
+RUN $INST_SCRIPTS/set_user_permission.sh $STARTUPDIR $HOME
 
-RUN sudo chmod -R 777 /home/user/tests && sudo chmod +x /opt/entrypoint.sh
-CMD su $user --command /opt/entrypoint.sh
+RUN apt-get update && apt-get install -y xvfb x11vnc
+RUN apt-get update && apt-get install -y sudo && \
+    # Создаем пользователя без пароля
+    useradd -m -s /bin/bash user || true && \
+    # Настраиваем sudo без пароля
+    echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vnc
+USER 1000
+
+CMD ["/bin/bash", "-c", "/dockerstartup/vnc_startup.sh && tail -f /dev/null"]
